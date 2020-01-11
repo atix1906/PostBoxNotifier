@@ -9,16 +9,14 @@
 #include "Constants.h"
 
 const int lightSensorAnalogData = A0; // Variable value can't be changed after initialization
-const int lightSensorDigitalData = D1; // Variable value can't be changed after initialization
+const int lightSensorDigitalData = D7; // Variable value can't be changed after initialization
 
 int sensorValue = 0;
 String output;
 String tmp;
-char sendSensorData[100];
-
-
-const char* ssid = GlobalConstants::ssid;
-const char* pass = GlobalConstants::password;
+const byte interruptPin = 13;
+volatile byte interruptCounter = 0;
+int numberOfInterrupts = 0;
 
 EspMQTTClient client(
   GlobalConstants::ssid,
@@ -38,10 +36,15 @@ void getStatus(const String & payload) {
   }
 }
 
+void handleInterrupt() {
+  interruptCounter++;
+}
+
 void setup()
 {
   Serial.begin(115200);
-
+  pinMode(interruptPin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), handleInterrupt, RISING);
   // Optionnal functionnalities of EspMQTTClient :
   //client.enableDebuggingMessages(); // Enable debugging messages sent to serial output
   //client.enableHTTPWebUpdater(); // Enable the web updater. User and password default to values of MQTTUsername and MQTTPassword. These can be overrited with enableHTTPWebUpdater("user", "password").
@@ -85,9 +88,18 @@ void publishSensorData(){
 
 void loop()
 {
+  if(interruptCounter>0){
+ 
+      interruptCounter = 0;
+      numberOfInterrupts++;
+      publishSensorData();
+      Serial.print("An interrupt has occurred. Total: ");
+      Serial.println(numberOfInterrupts);
+  }
+  
   client.loop();
   delay(100);
-  publishSensorData();
+  
   
   
   
