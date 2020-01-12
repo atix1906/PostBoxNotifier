@@ -86,16 +86,40 @@ void publishSensorData(){
   client.publish("Briefkasten/test", tmp); // You can activate the retain flag by setting the third parameter to true
 }
 
+int checkPostBox(){
+  // 0 --> when there is light
+  // 1 --> when it is dark
+  return digitalRead(lightSensorDigitalData);
+}
+
+void goingToSleep(){
+  yield();
+  Serial.println("going to deepsleep");
+  delay(100);
+  ESP.deepSleep(0);
+  yield();
+}
+
+
 void loop()
 {
-  if(interruptCounter>0){
+  
+  /*if(interruptCounter>0){
  
       interruptCounter = 0;
       numberOfInterrupts++;
       publishSensorData();
       Serial.print("An interrupt has occurred. Total: ");
       Serial.println(numberOfInterrupts);
+  }*/
+
+  if(checkPostBox() == 0){
+    Serial.println("Awake");
   }
+  else{
+    goingToSleep();
+  }
+    
   
   client.loop();
   delay(100);
