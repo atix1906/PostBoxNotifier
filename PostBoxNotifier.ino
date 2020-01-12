@@ -11,12 +11,14 @@
 const int lightSensorAnalogData = A0; // Variable value can't be changed after initialization
 const int lightSensorDigitalData = D7; // Variable value can't be changed after initialization
 
-int sensorValue = 0;
+int analogSensorValue = 0;
+int digitalSensorValue = 0;
 String output;
 String tmp;
 const byte interruptPin = 13;
 volatile byte interruptCounter = 0;
 int numberOfInterrupts = 0;
+int counter = 0;
 
 EspMQTTClient client(
   GlobalConstants::ssid,
@@ -49,6 +51,11 @@ void setup()
   //client.enableDebuggingMessages(); // Enable debugging messages sent to serial output
   //client.enableHTTPWebUpdater(); // Enable the web updater. User and password default to values of MQTTUsername and MQTTPassword. These can be overrited with enableHTTPWebUpdater("user", "password").
   client.enableLastWillMessage("TestClient/lastwill", "I am going offline");  // You can activate the retain flag by setting the third parameter to true
+
+  //Serial.println("I'm awake.");
+
+  //Serial.println("Going into deep sleep for 20 seconds");
+  //ESP.deepSleep(20e6); // 20e6 is 20 microseconds
 }
 
 // This function is called once everything is connected (Wifi and MQTT)
@@ -78,18 +85,20 @@ void onConnectionEstablished()
 }
 
 void publishSensorData(){
-  sensorValue = analogRead(lightSensorAnalogData);
-  tmp = String(sensorValue);
-  client.publish("Briefkasten/test", tmp); // You can activate the retain flag by setting the third parameter to true
-  sensorValue = digitalRead(lightSensorDigitalData);
-  tmp = String(sensorValue);
-  client.publish("Briefkasten/test", tmp); // You can activate the retain flag by setting the third parameter to true
+  client.publish("Briefkasten/test", String(analogSensorValue)); // You can activate the retain flag by setting the third parameter to true
+  
+  client.publish("Briefkasten/test", String(digitalSensorValue)); // You can activate the retain flag by setting the third parameter to true
+}
+
+void getSensorData(){
+  analogSensorValue = analogRead(lightSensorAnalogData);
+  digitalSensorValue = digitalRead(lightSensorDigitalData);
 }
 
 int checkPostBox(){
   // 0 --> when there is light
   // 1 --> when it is dark
-  return digitalRead(lightSensorDigitalData);
+  return digitalSensorValue;
 }
 
 void goingToSleep(){
@@ -103,22 +112,28 @@ void goingToSleep(){
 
 void loop()
 {
-  
-  /*if(interruptCounter>0){
- 
-      interruptCounter = 0;
-      numberOfInterrupts++;
-      publishSensorData();
-      Serial.print("An interrupt has occurred. Total: ");
-      Serial.println(numberOfInterrupts);
-  }*/
+  if(counter == 10){
+    counter = 0;
+    getSensorData();
+    publishSensorData();
+    /*if(interruptCounter>0){
+   
+        interruptCounter = 0;
+        numberOfInterrupts++;
+        publishSensorData();
+        Serial.print("An interrupt has occurred. Total: ");
+        Serial.println(numberOfInterrupts);
+    }*/
 
-  if(checkPostBox() == 0){
-    Serial.println("Awake");
+    if(checkPostBox() == 0){
+      Serial.println("Awake");
+    }
+    else{
+      //goingToSleep();
+    }  
   }
-  else{
-    goingToSleep();
-  }
+  counter++;
+  
     
   
   client.loop();
