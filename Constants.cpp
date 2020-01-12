@@ -1,5 +1,5 @@
 #include "Constants.h"
 
-const char* GlobalConstants::ssid = "Melu";
-const char* GlobalConstants::password = "_8063N533_";
-const char* GlobalConstants::ipAddress = "192.168.2.109";
+const char* GlobalConstants::ssid = "ssid";
+const char* GlobalConstants::password = "passwd";
+const char* GlobalConstants::ipAddress = "broker ip";
