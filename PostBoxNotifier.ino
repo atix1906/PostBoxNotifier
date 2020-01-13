@@ -8,16 +8,6 @@
 #include "EspMQTTClient.h"
 #include "Constants.h"
 
-const int lightSensorAnalogData = A0; // Variable value can't be changed after initialization
-const int lightSensorDigitalData = D7; // Variable value can't be changed after initialization
-
-int analogSensorValue = 0;
-int digitalSensorValue = 0;
-String output;
-String tmp;
-const byte interruptPin = 13;
-volatile byte interruptCounter = 0;
-int numberOfInterrupts = 0;
 int counter = 0;
 
 EspMQTTClient client(
@@ -38,24 +28,15 @@ void getStatus(const String & payload) {
   }
 }
 
-void handleInterrupt() {
-  interruptCounter++;
-}
-
 void setup()
 {
   Serial.begin(115200);
-  pinMode(interruptPin, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), handleInterrupt, RISING);
+  //pinMode(interruptPin, INPUT_PULLUP);
+  //attachInterrupt(digitalPinToInterrupt(interruptPin), handleInterrupt, RISING);
   // Optionnal functionnalities of EspMQTTClient :
   //client.enableDebuggingMessages(); // Enable debugging messages sent to serial output
   //client.enableHTTPWebUpdater(); // Enable the web updater. User and password default to values of MQTTUsername and MQTTPassword. These can be overrited with enableHTTPWebUpdater("user", "password").
   client.enableLastWillMessage("TestClient/lastwill", "I am going offline");  // You can activate the retain flag by setting the third parameter to true
-
-  //Serial.println("I'm awake.");
-
-  //Serial.println("Going into deep sleep for 20 seconds");
-  //ESP.deepSleep(20e6); // 20e6 is 20 microseconds
 }
 
 // This function is called once everything is connected (Wifi and MQTT)
@@ -72,33 +53,16 @@ void onConnectionEstablished()
     Serial.println(payload);
   });
      
-  
   // Publish a message to "Briefkasten/test"
-  client.publish("Briefkasten/test", "Briefkasten is connected"); // You can activate the retain flag by setting the third parameter to true
+  client.publish("Briefkasten/inbox", "Briefkasten is connected"); // You can activate the retain flag by setting the third parameter to true
   
   // Execute delayed instructions
   client.executeDelayed(5 * 1000, []() {
-    client.publish("Briefkasten/test", "This is a message sent 5 seconds later");
+    client.publish("Briefkasten/inbox", "Check your letterbox!");
+    counter = 0;
   });
 
    //client.publish("Briefkasten/test", "loop",true); // You can activate the retain flag by setting the third parameter to true
-}
-
-void publishSensorData(){
-  client.publish("Briefkasten/test", String(analogSensorValue)); // You can activate the retain flag by setting the third parameter to true
-  
-  client.publish("Briefkasten/test", String(digitalSensorValue)); // You can activate the retain flag by setting the third parameter to true
-}
-
-void getSensorData(){
-  analogSensorValue = analogRead(lightSensorAnalogData);
-  digitalSensorValue = digitalRead(lightSensorDigitalData);
-}
-
-int checkPostBox(){
-  // 0 --> when there is light
-  // 1 --> when it is dark
-  return digitalSensorValue;
 }
 
 void goingToSleep(){
@@ -109,41 +73,15 @@ void goingToSleep(){
   yield();
 }
 
-
 void loop()
 {
-  if(counter == 10){
-    counter = 0;
-    getSensorData();
-    publishSensorData();
-    /*if(interruptCounter>0){
-   
-        interruptCounter = 0;
-        numberOfInterrupts++;
-        publishSensorData();
-        Serial.print("An interrupt has occurred. Total: ");
-        Serial.println(numberOfInterrupts);
-    }*/
-
-    if(checkPostBox() == 0){
-      Serial.println("Awake");
-    }
-    else{
-      //goingToSleep();
-    }  
-  }
+  Serial.println(counter);
   counter++;
-  
-    
+  if(counter == 100){
+    Serial.print("Waited 10 seconds,");
+    goingToSleep();
+  }
   
   client.loop();
   delay(100);
-  
-  
-  
-  
-  //Serial.println(sensorValue);
-
-  //sensorValue = digitalRead(lightSensorDigitalData);
-  //Serial.println(sensorValue);
 }
