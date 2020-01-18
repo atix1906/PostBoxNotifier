@@ -9,6 +9,7 @@
 #include "Constants.h"
 
 int counter = 0;
+unsigned int counter2 = 0;
 
 EspMQTTClient client(
   GlobalConstants::ssid,
@@ -31,6 +32,12 @@ void getStatus(const String & payload) {
 void setup()
 {
   Serial.begin(115200);
+
+ // noInterrupts();
+ // timer0_isr_init();
+ // timer0_attachInterrupt(servoISR)
+  // pinMode(D6  , OUTPUT);
+  setOutputPins();
   //pinMode(interruptPin, INPUT_PULLUP);
   //attachInterrupt(digitalPinToInterrupt(interruptPin), handleInterrupt, RISING);
   // Optionnal functionnalities of EspMQTTClient :
@@ -67,21 +74,45 @@ void onConnectionEstablished()
 
 void goingToSleep(){
   yield();
+  //setOutputPins();
+  setPinsLow();
   Serial.println("going to deepsleep");
   delay(100);
   ESP.deepSleep(0);
   yield();
 }
 
+void setOutputPins(){
+  pinMode(D1, OUTPUT);
+  pinMode(D2, OUTPUT);
+  pinMode(D3, OUTPUT);
+  pinMode(D4, OUTPUT);
+  pinMode(D5, OUTPUT);
+  pinMode(D6, OUTPUT);
+  pinMode(D7, OUTPUT);
+  pinMode(D8, OUTPUT);
+}
+
+void setPinsLow(){
+  digitalWrite(D1, LOW);
+  digitalWrite(D2, LOW);
+  digitalWrite(D3, LOW);
+  digitalWrite(D4, LOW);
+  digitalWrite(D5, LOW);
+  digitalWrite(D6, LOW);
+  digitalWrite(D7, LOW);
+  digitalWrite(D8, LOW);
+}
+
 void loop()
 {
-  Serial.println(counter);
+  Serial.println(counter); 
   counter++;
   if(counter == 100){
-    Serial.print("Waited 10 seconds,");
+    //setPinsLow();
+    Serial.println("Waited 10 seconds,");
     goingToSleep();
   }
-  
   client.loop();
   delay(100);
 }
